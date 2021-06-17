@@ -1,1 +1,6 @@
 .ijwb
+.*sw[a-z]
+bazel-bin
+bazel-out
+bazel-test-logs
+bazel-execlog-parser
