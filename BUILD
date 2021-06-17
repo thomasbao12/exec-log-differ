@@ -9,7 +9,7 @@ kt_jvm_library(
 )
 
 java_binary(
-    name = "executable",
+    name = "ExecLogDiffer",
     main_class = "com.airbnb.execlog_parser.ExecLogParser",
     runtime_deps = [":ExecLogParser"],
 )
