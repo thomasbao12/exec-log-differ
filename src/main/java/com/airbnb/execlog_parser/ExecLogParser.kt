@@ -1,6 +1,7 @@
 package com.airbnb.execlog_parser
 
 import com.google.devtools.build.lib.exec.Protos.SpawnExec
+import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -41,8 +42,18 @@ object ExecLogParser {
   }
 
   @JvmStatic fun main(arg: Array<String>) {
-    val logPath1 = "/tmp/exec-1.log"
-    val logPath2 = "/tmp/exec-2.log"
+    if (arg.size < 2) {
+      println("This program takes in 2-3 arguments:")
+      println("logPath1 logPath2 [allowlist of filepaths]")
+      throw Exception("Invalid arguments")
+    }
+    val logPath1 = arg.get(0)
+    val logPath2 = arg.get(1)
+    val allowListPath = arg.getOrNull(2)
+    var allowList = setOf<String>()
+    if (allowListPath != null) {
+      allowList = File(allowListPath).readLines().map { it.trim() }.toSet()
+    }
     val fileHashMap1 = getFileHashes(logPath1)
     val fileHashMap2 = getFileHashes(logPath2)
     if (fileHashMap1.keys != fileHashMap2.keys) {
@@ -56,6 +67,11 @@ object ExecLogParser {
     val inputHashDiffs = mutableMapOf<String, Pair<String, String>>()
     fileHashMap1.keys.forEach { path ->
       if (fileHashMap1[path] != fileHashMap2[path]) {
+        if (allowList.any {
+            path.endsWith(it)
+          }) {
+          return@forEach
+        }
         inputHashDiffs[path] = Pair(fileHashMap1[path]!!, fileHashMap2[path]!!)
       }
     }
