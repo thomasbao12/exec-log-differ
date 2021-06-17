@@ -10,3 +10,4 @@ java_binary(
     main_class = "com.airbnb.execlog_parser.ExecLogParser",
     runtime_deps = [":ExecLogParser"],
 )
+
