@@ -2,5 +2,5 @@
 .*sw[a-z]
 bazel-bin
 bazel-out
-bazel-test-logs
+bazel-testlogs
 bazel-execlog-parser
