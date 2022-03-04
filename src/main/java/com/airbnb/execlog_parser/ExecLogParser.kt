@@ -21,9 +21,9 @@ object ExecLogParser {
   }
 
   @Throws(IOException::class)
-  fun getFileDigests(logPath: String): Map<String, Digest> {
+  fun getFileDigests(logPath: String): LinkedHashMap<String, Digest> {
     inputStream = FileInputStream(logPath)
-    val fileHashMap = mutableMapOf<String, Digest>()
+    val fileHashMap = LinkedHashMap<String, Digest>()
     var spawnExec = getNext()
     while (spawnExec != null) {
       spawnExec.inputsList.union(spawnExec.actualOutputsList).forEach { fileProto ->
@@ -66,7 +66,7 @@ object ExecLogParser {
           "The second log has these additional inputs/output files: ${fileHashMap2.keys.subtract(fileHashMap1.keys)}\n"
       )
     }
-    val inputDigestDiffs = mutableMapOf<String, Pair<Digest, Digest>>()
+    val inputDigestDiffs = LinkedHashMap<String, Pair<Digest, Digest>>()
     fileHashMap1.keys.forEach { path ->
       if (fileHashMap1[path]!!.hash != fileHashMap2[path]!!.hash) {
         if (allowList.any {
