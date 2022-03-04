@@ -1,6 +1,7 @@
 package com.airbnb.execlog_parser
 
 import com.google.devtools.build.lib.exec.Protos.SpawnExec
+import com.google.devtools.build.lib.exec.Protos.Digest
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -20,21 +21,22 @@ object ExecLogParser {
   }
 
   @Throws(IOException::class)
-  fun getFileHashes(logPath: String): Map<String,String> {
+  fun getFileDigests(logPath: String): Map<String, Digest> {
     inputStream = FileInputStream(logPath)
-    val fileHashMap = mutableMapOf<String, String>()
+    val fileHashMap = mutableMapOf<String, Digest>()
     var spawnExec = getNext()
     while (spawnExec != null) {
       spawnExec.inputsList.union(spawnExec.actualOutputsList).forEach { fileProto ->
-        val hash = fileProto.digest.hash
+        val digest = fileProto.digest
+        val hash = digest.hash
         val path = fileProto.path
-        if (fileHashMap.get(path) != null && fileHashMap.get(path) != hash) {
+        if (fileHashMap.get(path) != null && fileHashMap.get(path)!!.hash != hash) {
           throw Exception(
             "File hash changed during bazel build.  Something is seriously wrong!\n" +
               "$path has at least two different hashes: ${fileHashMap[path]} $hash\n"
           )
         }
-        fileHashMap[path] = hash
+        fileHashMap[path] = digest
       }
       spawnExec = getNext()
     }
@@ -54,8 +56,8 @@ object ExecLogParser {
     if (allowListPath != null) {
       allowList = File(allowListPath).readLines().map { it.trim() }.toSet()
     }
-    val fileHashMap1 = getFileHashes(logPath1)
-    val fileHashMap2 = getFileHashes(logPath2)
+    val fileHashMap1 = getFileDigests(logPath1)
+    val fileHashMap2 = getFileDigests(logPath2)
     if (fileHashMap1.keys != fileHashMap2.keys) {
       throw Exception(
         "Execution logs have different sets of inputs and outputs!\n" +
@@ -64,22 +66,22 @@ object ExecLogParser {
           "The second log has these additional inputs/output files: ${fileHashMap2.keys.subtract(fileHashMap1.keys)}\n"
       )
     }
-    val inputHashDiffs = mutableMapOf<String, Pair<String, String>>()
+    val inputDigestDiffs = mutableMapOf<String, Pair<Digest, Digest>>()
     fileHashMap1.keys.forEach { path ->
-      if (fileHashMap1[path] != fileHashMap2[path]) {
+      if (fileHashMap1[path]!!.hash != fileHashMap2[path]!!.hash) {
         if (allowList.any {
             path.endsWith(it)
           }) {
           return@forEach
         }
-        inputHashDiffs[path] = Pair(fileHashMap1[path]!!, fileHashMap2[path]!!)
+        inputDigestDiffs[path] = Pair(fileHashMap1[path]!!, fileHashMap2[path]!!)
       }
     }
-    if (inputHashDiffs.isNotEmpty()) {
+    if (inputDigestDiffs.isNotEmpty()) {
       println("Execution logs have unexpected hash diffs, indicating the build is not deterministic")
       println("Consider adding the path to the allowlist if its impact is small.  Otherwise, please fix")
-      println("input hash diffs:")
-      inputHashDiffs.forEach {
+      println("input file digests:")
+      inputDigestDiffs.forEach {
         println("${it.key}: ${it.value.first} ${it.value.second}")
       }
       throw Exception("Execution logs have different hashes for the same input")
