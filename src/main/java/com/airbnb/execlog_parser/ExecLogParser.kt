@@ -78,11 +78,16 @@ object ExecLogParser {
       }
     }
     if (inputDigestDiffs.isNotEmpty()) {
-      println("Execution logs have unexpected hash diffs, indicating the build is not deterministic")
-      println("Consider adding the path to the allowlist if its impact is small.  Otherwise, please fix")
+      println("Execution logs have unexpected hash diffs, indicating the build is not deterministic.")
+      println("Consider adding the path to the allowlist if its impact is small.  Otherwise, please fix!")
+      println("")
       println("input file digests:")
+      println("")
       inputDigestDiffs.forEach {
-        println("${it.key}: ${it.value.first} ${it.value.second}")
+        println("${it.key}:")
+        println("")
+        println(it.value.first)
+        println(it.value.second)
       }
       throw Exception("Execution logs have different hashes for the same input")
     }
