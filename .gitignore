@@ -4,3 +4,4 @@ bazel-bin
 bazel-out
 bazel-testlogs
 bazel-execlog-parser
+bazel-exec-log-differ
